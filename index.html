@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kartenautomat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      font-family: Arial, sans-serif;
+      background-image: url('bilder/hintergrund.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: white;
+    }
+
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      gap: 30px;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .hebel-container {
+      display: flex;
+      align-items: flex-start;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .hebel-wrapper {
+      width: 45px;
+      height: 160px;
+      background: linear-gradient(to bottom, #7a4b2b, #3e2b1c); /* rostig-braun */
+      border-radius: 22px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      box-shadow: inset 0 0 6px #2b1b10, 2px 2px 8px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease;
+    }
+
+    .hebel-griff {
+      width: 10px;
+      height: 110px;
+      background: linear-gradient(to bottom, #a2653a, #5a3a26); /* rostiger Stab */
+      border-radius: 5px;
+      box-shadow: inset -1px -1px 3px rgba(0,0,0,0.6);
+    }
+
+    .hebel-kugel {
+      width: 45px;
+      height: 45px;
+      background: radial-gradient(circle at 30% 30%, #c9775c, #5a2d1f); /* rostig-orange */
+      border-radius: 50%;
+      margin-bottom: 6px;
+      box-shadow: inset -4px -4px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .hebel-wrapper.aktiv {
+      animation: hebel-ziehen 0.5s ease;
+    }
+
+    @keyframes hebel-ziehen {
+      0% { transform: rotate(0deg); }
+      30% { transform: rotate(25deg); }
+      60% { transform: rotate(25deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .hebel-text {
+      font-family: 'Cinzel Decorative', cursive;
+      font-size: 34px;
+      line-height: 1.1;
+      color: #FFD700;
+      text-align: center;
+      text-shadow:
+        0 0 8px #ffda6b,
+        0 0 16px #ffbf00,
+        0 0 24px #ff9d00,
+        2px 2px 6px black;
+    }
+
+    .karten-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 1400px;
+      padding: 0 10px;
+    }
+
+    .karten-wrapper {
+      perspective: 1000px;
+      width: 321px;
+      aspect-ratio: 2 / 3;
+    }
+
+    .karte {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.9s ease;
+      transform: rotateY(0deg);
+    }
+
+    .karte.show {
+      transform: rotateY(180deg);
+    }
+
+    .seite {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border: none;
+      box-shadow: none;
+      object-fit: cover;
+    }
+
+    .rueckseite {
+      background: url('karten/rueckseite.png') center center / cover no-repeat;
+      background-color: transparent;
+      z-index: 2;
+      transform: scale(0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vorderseite {
+      background: url('bilder/nebel.png') center center / cover no-repeat;
+      background-color: transparent;
+      transform: rotateY(180deg);
+    }
+
+    #soundToggle {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 100px;
+      height: 100px;
+      background: url('icons/sound-on.png') center/contain no-repeat;
+      cursor: pointer;
+      z-index: 999;
+    }
+
+    #soundToggle.muted {
+      background-image: url('icons/sound-off.png');
+    }
+  </style>
+</head>
+<body>
+
+  <div id="soundToggle" title="Sound an/aus"></div>
+
+  <div class="wrapper">
+    <div class="hebel-container">
+      <div class="hebel-wrapper" id="hebel" onclick="zieheKarten()">
+        <div class="hebel-griff"></div>
+        <div class="hebel-kugel"></div>
+      </div>
+      <div class="hebel-text">
+        <div> wirf 1$ ein </div>
+        <div>Ms. Morrow</div>
+        <div>zeigt Dein</div>
+        <div>SCHICKSAL</div>
+      </div>
+    </div>
+
+    <div class="karten-container" id="kartenContainer"></div>
+  </div>
+
+  <script>
+    const rueckseite = "karten/rueckseite.png";
+    const soundKarten = new Audio("sounds/aufdecken.mp4");
+    soundKarten.volume = 0.5;
+
+    const soundHebel = new Audio("sounds/hebel.mp3");
+    soundHebel.volume = 0.49;
+
+    const soundFinale = new Audio("sounds/finale.mp3");
+    soundFinale.volume = 0.8;
+
+    const karten = Array.from({ length: 21 }, (_, i) => `karten/karte${i + 1}.png`);
+    const kartenWrapper = document.getElementById("kartenContainer");
+
+    const kartenElemente = [];
+    for (let i = 0; i < 4; i++) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "karten-wrapper";
+
+      const karte = document.createElement("div");
+      karte.className = "karte";
+
+      const rueck = document.createElement("div");
+      rueck.className = "seite rueckseite";
+
+      const front = document.createElement("div");
+      front.className = "seite vorderseite";
+
+      karte.appendChild(rueck);
+      karte.appendChild(front);
+      wrapper.appendChild(karte);
+      kartenWrapper.appendChild(wrapper);
+      kartenElemente.push({ karte, front });
+    }
+
+    function zieheEinzigartigeKarten(anzahl) {
+      const pool = [...karten];
+      const gezogen = [];
+      for (let i = 0; i < anzahl; i++) {
+        const index = Math.floor(Math.random() * pool.length);
+        gezogen.push(pool.splice(index, 1)[0]);
+      }
+      return gezogen;
+    }
+
+    function zieheKarten() {
+      const hebel = document.getElementById("hebel");
+      hebel.classList.add("aktiv");
+
+      soundHebel.currentTime = 0;
+      soundHebel.play();
+
+      // Karten zurückdrehen
+      kartenElemente.forEach(({ karte }) => {
+        karte.classList.remove("show");
+      });
+
+      // Nach kurzer Pause neue Karten ziehen
+      setTimeout(() => {
+        hebel.classList.remove("aktiv");
+
+        const gezogene = zieheEinzigartigeKarten(4);
+
+        gezogene.forEach((bild, i) => {
+          setTimeout(() => {
+            const { karte, front } = kartenElemente[i];
+            front.style.backgroundImage = `url('${bild}')`;
+            karte.classList.add("show");
+
+            soundKarten.currentTime = 0;
+            soundKarten.play();
+
+            if (i === 3) {
+              setTimeout(() => {
+                soundFinale.currentTime = 0;
+                soundFinale.play();
+              }, 1800);
+            }
+          }, 1000 * i + 1000);
+        });
+      }, 800);
+    }
+
+    // Hintergrundmusik
+    const bgMusic = new Audio("sounds/hintergrund.mp3");
+    bgMusic.loop = true;
+    bgMusic.volume = 0.1;
+    bgMusic.muted = true;
+    bgMusic.play().catch(() => {});
+
+    window.addEventListener("click", () => {
+      bgMusic.muted = false;
+      bgMusic.play();
+    }, { once: true });
+
+    // Sound Toggle
+    const soundToggle = document.getElementById("soundToggle");
+    let soundMuted = false;
+
+    soundToggle.addEventListener("click", () => {
+      soundMuted = !soundMuted;
+      soundToggle.classList.toggle("muted", soundMuted);
+      [soundKarten, soundHebel, soundFinale, bgMusic].forEach(audio => {
+        audio.muted = soundMuted;
+      });
+    });
+  </script>
+</body>
+</html>
