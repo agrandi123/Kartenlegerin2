@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>MOIRA</title>
+<title>Miss Morrow</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&amp;display=swap" rel="stylesheet"/>
 <style>
 #vorhang-overlay {
@@ -19,7 +19,7 @@
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  transition: transform 4s ease;
+  transition: transform 5s ease;
 }
 .vorhang.links {
   background-image: url('bilder/vorhang-links.png');
@@ -322,7 +322,7 @@
       const vorhang = document.getElementById("vorhang-overlay");
       window.addEventListener("click", () => {
         vorhang.classList.add("geoeffnet");
-        setTimeout(() => vorhang.remove(), 4000);
+        setTimeout(() => vorhang.remove(), 4500);
         bgMusic.muted = false;
         bgMusic.play();
       }, { once: true });
@@ -339,13 +339,13 @@
       ];
       soundsProKarte.forEach(s => {
         s.preload = "auto";
-        s.volume = 0.65;
+        s.volume = 0.70;
       });
 
       [soundKarten, soundHebel, soundFinale].forEach(a => a.volume = 0.5);
       soundHebel.volume = 0.25;
       bgMusic.loop = true;
-      bgMusic.volume = 0.18;
+      bgMusic.volume = 0.20;
       bgMusic.muted = true;
       bgMusic.play().catch(() => {});
 
@@ -354,10 +354,10 @@
         bgMusic.play();
       }, { once: true });
 
-      const alleKarten = Array.from({ length: 40 }, (_, i) => `karten/karte${i + 1}.png`);
+      const alleKarten = Array.from({ length: 42 }, (_, i) => `karten/karte${i + 1}.png`);
       const ersteRundeKarten = [
         ...Array.from({ length: 13 }, (_, i) => `karten/karte${i + 1}.png`),
-        'karten/karte19.png',
+	'karten/karte19.png',
         'karten/karte22.png',
         'karten/karte23.png',
         'karten/karte27.png',
@@ -371,7 +371,11 @@
         'karten/karte36.png',
         'karten/karte37.png',
         'karten/karte38.png',
-        'karten/karte39.png'
+        'karten/karte39.png',
+        'karten/karte41.png',
+	'karten/karte42.png',
+	'karten/karte43.png',
+        'karten/karte44.png'
       ];
 
       const kartenWrapper = document.getElementById("kartenContainer");
