@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MOIRA</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet"/>
+<style>
+#vorhang-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  pointer-events: all;
+}
+.vorhang {
+  flex: 1;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  transition: transform 4s ease;
+}
+.vorhang.links {
+  background-image: url('bilder/vorhang-links.png');
+  transform: translateX(0);
+}
+.vorhang.rechts {
+  background-image: url('bilder/vorhang-rechts.png');
+  transform: translateX(0);
+}
+#vorhang-overlay.geoeffnet .links {
+  transform: translateX(-100%);
+}
+#vorhang-overlay.geoeffnet .rechts {
+  transform: translateX(100%);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100svh;
+  width: 100vw;
+  font-family: Arial, sans-serif;
+  background: url('bilder/hintergrund.jpg') center/cover no-repeat fixed;
+  overflow: hidden;
+  color: white;
+  position: relative;
+}
+
+.rauchschleier {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 120vw;
+  height: 120svh;
+  background: url('bilder/nebel.png') center/cover repeat;
+  opacity: 0.45;
+  animation: rauchBewegung 90s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+  transform: scale(1.2);
+}
+
+@keyframes rauchBewegung {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 200%; }
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  padding: 1vh 2vw;
+  position: relative;
+  z-index: 1;
+}
+
+.bereich-oben {
+  display: flex;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-bottom: 4vh;
+}
+
+.schild-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  padding: 1vw 2vw;
+  background: linear-gradient(to bottom, #555, #222);
+  border-radius: 16px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.7), inset 0 0 5px rgba(255, 255, 255, 0.05);
+}
+
+/* Guthaben-Anzeige */
+.guthaben-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 2vw;
+  font-family: 'Cinzel Decorative', cursive;
+  color: #FFFFFF;
+  text-shadow: 0 0 6px #cccccc, 0 0 12px #999999, 1px 1px 3px black;
+  min-width: 80px;
+}
+
+.guthaben-label {
+  font-size: clamp(14px, 1.8vw, 24px);
+  margin-bottom: 0.3em;
+}
+
+.guthaben-stand {
+  font-size: clamp(16px, 2.5vw, 32px);
+  transition: opacity 0.2s ease;
+}
+
+.guthaben-stand.blink {
+  animation: blinkGuthaben 1s ease-in-out 3;
+}
+
+@keyframes blinkGuthaben {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.bereich-unten {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+/* Hebel in Silber/Grau */
+.hebel-wrapper {
+  width: 45px;
+  height: 100%;
+  background: linear-gradient(to bottom, #b0b0b0, #5a5a5a);
+  border-radius: 22px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  box-shadow: inset 0 0 6px #3a3a3a, 2px 2px 8px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease;
+}
+
+.hebel-griff {
+  width: 10px;
+  height: 70%;
+  background: linear-gradient(to bottom, #d0d0d0, #777777);
+  border-radius: 5px;
+  box-shadow: inset -1px -1px 3px rgba(0,0,0,0.6);
+}
+
+.hebel-kugel {
+  width: 100%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 30% 30%, #f0f0f0, #8a8a8a);
+  border-radius: 50%;
+  margin-bottom: 6px;
+  box-shadow: inset -4px -4px 8px rgba(0, 0, 0, 0.6);
+}
+
+.hebel-wrapper.aktiv {
+  animation: hebel-ziehen 0.5s ease;
+}
+
+@keyframes hebel-ziehen {
+  0% { transform: rotate(0deg); }
+  30% { transform: rotate(25deg); }
+  60% { transform: rotate(25deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Hebel-Text – Schrift jetzt weiß */
+.hebel-text {
+  font-family: 'Cinzel Decorative', cursive;
+  font-size: clamp(16px, 2.5vw, 32px);
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(1.2em * 4);
+  text-align: center;
+  color: #FFFFFF;
+  text-shadow: 0 0 8px #cccccc, 0 0 16px #999999, 0 0 24px #777777, 2px 2px 6px black;
+}
+
+.karten-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  padding: 0 2vw;
+}
+
+.karten-wrapper {
+  width: 21%;
+  aspect-ratio: 2 / 3;
+  perspective: 1000px;
+}
+
+.karte {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.9s ease;
+  transform: rotateY(0deg);
+}
+
+.karte.show {
+  transform: rotateY(180deg);
+}
+
+.seite {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  object-fit: cover;
+}
+
+.rueckseite {
+  background: url('karten/rueckseite.png') center/cover no-repeat;
+  z-index: 2;
+  transform: scale(0.89);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.vorderseite {
+  background: url('bilder/nebel.png') center/cover no-repeat;
+  transform: rotateY(180deg);
+}
+
+/* Sound-Controls */
+.sound-controls {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  gap: 16px;
+  z-index: 2;
+  font-family: 'Cinzel Decorative', cursive;
+}
+
+.sound-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+}
+
+.sound-icon {
+  width: 80px;
+  height: 80px;
+  background: url('icons/sound-on.png') center/contain no-repeat;
+  cursor: pointer;
+}
+
+#soundToggle.muted,
+#musicToggle.muted {
+  background-image: url('icons/sound-off.png');
+}
+
+.sound-label {
+  text-align: center;
+  font-size: 16px;
+  color: #FFFFFF;
+  text-shadow: 0 0 6px #cccccc, 0 0 12px #999999, 1px 1px 3px black;
+  margin-top: 4px;
+}
+
+/* Season-1-Button in der Sound-Leiste */
+.season-link {
+  text-decoration: none;
+  color: inherit;
+}
+.season-icon {
+  background-image: url('icons/thema.png'); /* Platzhalter-Icon, kann ersetzt werden */
+}
+
+/* Hinweis rechts oben – Schrift weiß */
+.blinkhinweis {
+  position: fixed;
+  top: 12vh;
+  right: 2vw;
+  z-index: 2;
+  font-size: clamp(14px, 1.8vw, 26px);
+  text-align: right;
+  font-family: 'Cinzel Decorative', cursive;
+  color: #FFFFFF;
+  text-shadow: 0 0 8px #cccccc, 0 0 16px #999999, 0 0 24px #777777, 2px 2px 6px black;
+  animation: blinken 2s ease-in-out infinite;
+  line-height: 1.2;
+  transform: rotate(30deg);
+}
+
+@keyframes blinken {
+  0% { opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+</style>
+</head>
+<body>
+
+<!-- Modal für Aufladung -->
+<div id="guthabenModal" style="
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #222;
+  padding: 30px 40px;
+  border: 2px solid #c0c0c0;
+  border-radius: 12px;
+  z-index: 9999;
+  font-family: 'Cinzel Decorative', cursive;
+  color: #FFFFFF;
+  text-shadow: 0 0 8px #cccccc, 0 0 16px #999999;
+  text-align: center;
+">
+  <div style="font-size: 2em; margin-bottom: 20px;">Bitte Geld einwerfen!</div>
+  <button id="einwerfenBtn" style="
+    font-size: 1.5em;
+    padding: 10px 30px;
+    background: #444;
+    border: 2px solid #c0c0c0;
+    border-radius: 10px;
+    color: #FFFFFF;
+    cursor: pointer;
+    text-shadow: 0 0 5px black;
+    pointer-events: auto;
+  ">7 Dollar</button>
+</div>
+
+<div id="kartenZaehler" style="
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.6);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-family: 'Cinzel Decorative', cursive;
+  font-size: 14px;
+  color: #FFFFFF;
+  text-shadow: 0 0 6px #cccccc, 0 0 12px #999999, 1px 1px 3px black;
+  z-index: 2;">
+  Karten übrig: 28
+</div>
+
+<div id="vorhang-overlay">
+  <div class="vorhang links"></div>
+  <div class="vorhang rechts"></div>
+</div>
+
+<div class="rauchschleier"></div>
+<div class="blinkhinweis">
+    Spezialkarten erst ab<br/>der zweiten Legung!
+</div>
+
+<!-- Ton / Musik / Season 1 -->
+<div class="sound-controls">
+  <div class="sound-control">
+    <div class="sound-icon" id="soundToggle" title="Sound an/aus"></div>
+    <div class="sound-label">Ton</div>
+  </div>
+  <div class="sound-control">
+    <div class="sound-icon" id="musicToggle" title="Musik an/aus"></div>
+    <div class="sound-label">Musik</div>
+  </div>
+  <div class="sound-control">
+    <a href="https://agrandi123.github.io/Kartenlegerin1/" target="_blank" class="season-link">
+      <div class="sound-icon season-icon" id="season1Icon" title="Season 1"></div>
+      <div class="sound-label">Season 1</div>
+    </a>
+  </div>
+</div>
+
+<div class="wrapper">
+  <div class="bereich-oben">
+    <div class="schild-wrapper">
+      <div class="guthaben-box">
+        <div class="guthaben-label">Guthaben</div>
+        <div class="guthaben-stand" id="guthabenAnzeige">7 $</div>
+      </div>
+      <div class="hebel-wrapper" id="hebel">
+        <div class="hebel-griff"></div>
+        <div class="hebel-kugel"></div>
+      </div>
+      <div class="hebel-text">
+        <div>1$ und Miss</div>
+        <div>Morrow legt</div>
+        <div>für Dich das</div>
+        <div>kleine Kreuz</div>
+      </div>
+    </div>
+  </div>
+  <div class="bereich-unten">
+    <div class="karten-container" id="kartenContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const vorhang = document.getElementById("vorhang-overlay");
+    const soundKarten = new Audio("sounds/aufdecken.mp4");
+    const soundHebel = new Audio("sounds/hebel.mp3");
+    const soundFinale = new Audio("sounds/finale.mp3");
+    const soundMuenze = new Audio("sounds/muenze.mp3");
+    soundMuenze.volume = 0.5;
+
+    // Hintergrundmusik – Standard-Track
+    const bgMusic = new Audio("sounds/hintergrund.mp3");
+
+    const soundsProKarte = [
+      new Audio("sounds/eins.mp3"),
+      new Audio("sounds/zwei.mp3"),
+      new Audio("sounds/drei.mp3"),
+      new Audio("sounds/vier.mp3")
+    ];
+    soundsProKarte.forEach(s => {
+      s.preload = "auto";
+      s.volume = 0.70;
+    });
+
+    [soundKarten, soundHebel, soundFinale].forEach(a => a.volume = 0.5);
+    soundHebel.volume = 0.20;
+    bgMusic.loop = true;
+    bgMusic.volume = 0.15;
+    bgMusic.muted = true;
+    bgMusic.play().catch(() => {});
+
+    // Erster beliebiger Klick: Vorhang öffnet, Musik an
+    window.addEventListener("click", () => {
+      vorhang.classList.add("geoeffnet");
+      setTimeout(() => vorhang.remove(), 4000);
+      bgMusic.muted = false;
+      bgMusic.play().catch(() => {});
+    }, { once: true });
+
+    // *** Gesamtdeck: 28 Karten ***
+    const alleKarten = Array.from({ length: 28 }, (_, i) => `karten/karte${i + 1}.png`);
+
+    const kartenWrapper = document.getElementById("kartenContainer");
+    const kartenElemente = [];
+
+    // Startguthaben 7 $
+    let guthaben = 7;
+    const guthabenAnzeige = document.getElementById("guthabenAnzeige");
+
+    function aktualisiereGuthaben() {
+      if (guthaben > 0) {
+        guthaben--;
+        guthabenAnzeige.textContent = `${guthaben} $`;
+        if (guthaben === 0) {
+          guthabenAnzeige.classList.add("blink");
+        }
+        return true;
+      } else {
+        guthabenAnzeige.classList.add("blink");
+        return false;
+      }
+    }
+
+    let aktiveTimeouts = [];
+    let hebelGesperrt = false;
+
+    for (let i = 0; i < 4; i++) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "karten-wrapper";
+      const karte = document.createElement("div");
+      karte.className = "karte";
+      const rueck = document.createElement("div");
+      rueck.className = "seite rueckseite";
+      const front = document.createElement("div");
+      front.className = "seite vorderseite";
+      karte.appendChild(rueck);
+      karte.appendChild(front);
+      wrapper.appendChild(karte);
+      kartenWrapper.appendChild(wrapper);
+      kartenElemente.push({ karte, front });
+    }
+
+    // Ziehpool: alle Karten – gezogene fallen heraus, bis Deck leer,
+    // dann wird der Pool neu befüllt
+    let ziehPool = [...alleKarten];
+
+    function aktualisiereZaehler() {
+      document.getElementById("kartenZaehler").textContent = `Karten übrig: ${ziehPool.length}`;
+    }
+
+    function zieheEinzigartigeKarten(anzahl) {
+      // Wenn nicht genug Karten übrig sind, neues Deck starten
+      if (ziehPool.length < anzahl) {
+        ziehPool = [...alleKarten];
+      }
+      const gezogen = [];
+      for (let i = 0; i < anzahl; i++) {
+        const index = Math.floor(Math.random() * ziehPool.length);
+        gezogen.push(ziehPool.splice(index, 1)[0]);
+      }
+      return gezogen;
+    }
+
+    function zieheKarten() {
+      if (hebelGesperrt) return;
+      hebelGesperrt = true;
+      setTimeout(() => hebelGesperrt = false, 8500);
+
+      if (!aktualisiereGuthaben()) {
+        modal.style.display = "block";
+        return;
+      }
+
+      aktiveTimeouts.forEach(id => clearTimeout(id));
+      aktiveTimeouts = [];
+
+      const hebel = document.getElementById("hebel");
+      hebel.classList.add("aktiv");
+      soundHebel.currentTime = 0;
+      soundHebel.play();
+      kartenElemente.forEach(({ karte }) => karte.classList.remove("show"));
+
+      setTimeout(() => {
+        hebel.classList.remove("aktiv");
+        const gezogene = zieheEinzigartigeKarten(4);
+        aktualisiereZaehler();
+
+        gezogene.forEach((bild, i) => {
+          let delay = [500, 2200, 5000, 7000][i];
+          const t = setTimeout(() => {
+            const { karte, front } = kartenElemente[i];
+            front.style.backgroundImage = `url('${bild}')`;
+
+            const sound = soundsProKarte[i];
+            sound.pause();
+            sound.currentTime = 0;
+            sound.play().catch(err => console.warn("Sound konnte nicht abgespielt werden:", err));
+
+            karte.classList.add("show");
+
+            soundKarten.currentTime = 0;
+            soundKarten.play();
+
+            if (i === 3) {
+              setTimeout(() => {
+                soundFinale.currentTime = 0;
+                soundFinale.play();
+              }, 1800);
+              aktualisiereZaehler();
+            }
+          }, delay);
+          aktiveTimeouts.push(t);
+        });
+      }, 800);
+    }
+
+    aktualisiereZaehler();
+    document.getElementById("hebel").addEventListener("click", zieheKarten);
+
+    const modal = document.getElementById("guthabenModal");
+    const einwerfenBtn = document.getElementById("einwerfenBtn");
+    einwerfenBtn.addEventListener("click", () => {
+      // Aufladebetrag 7 $
+      guthaben = 7;
+      guthabenAnzeige.textContent = `${guthaben} $`;
+      guthabenAnzeige.classList.remove("blink");
+      soundMuenze.currentTime = 0;
+      soundMuenze.play();
+      modal.style.display = "none";
+      hebelGesperrt = false;
+    });
+
+    const soundToggle = document.getElementById("soundToggle");
+    let soundMuted = false;
+    soundToggle.addEventListener("click", () => {
+      soundMuted = !soundMuted;
+      soundToggle.classList.toggle("muted", soundMuted);
+      [soundKarten, soundHebel, soundFinale, bgMusic, ...soundsProKarte].forEach(a => a.muted = soundMuted);
+    });
+
+    const musicToggle = document.getElementById("musicToggle");
+    let musicMuted = true;
+    musicToggle.addEventListener("click", () => {
+      musicMuted = !musicMuted;
+      musicToggle.classList.toggle("muted", musicMuted);
+      bgMusic.muted = musicMuted;
+      if (!musicMuted) bgMusic.play();
+    });
+  });
+</script>
+</body>
+</html>
