@@ -341,7 +341,7 @@ body::before {
     color: #FFFFFF;
     cursor: pointer;
     pointer-events: auto;
-  ">21 Dollar</button>
+  ">23 Dollar</button>
 </div>
 
 <div id="kartenZaehler" style="
@@ -355,7 +355,7 @@ body::before {
   font-size: 2px;
   color: #FFFFFF;
   z-index: 2;">
-  Karten übrig: 84
+  Karten übrig: 92
 </div>
 
 <div id="vorhang-overlay">
@@ -397,7 +397,7 @@ body::before {
     <div class="schild-wrapper">
       <div class="guthaben-box">
         <div class="guthaben-label">Guthaben</div>
-        <div class="guthaben-stand" id="guthabenAnzeige">21 $</div>
+        <div class="guthaben-stand" id="guthabenAnzeige">23 $</div>
       </div>
       <div class="hebel-wrapper" id="hebel">
         <div class="hebel-griff"></div>
@@ -449,14 +449,14 @@ window.addEventListener("DOMContentLoaded", () => {
     bgMusic.play().catch(() => {});
   }, { once: true });
 
-  /* --- 84 Karten --- */
-  const alleKarten = Array.from({ length: 84 }, (_, i) => `karten/karte${i + 1}.png`);
+  /* --- 92 Karten --- */
+  const alleKarten = Array.from({ length: 92 }, (_, i) => `karten/karte${i + 1}.png`);
 
   const kartenWrapper = document.getElementById("kartenContainer");
   const kartenElemente = [];
 
-  /* --- Guthaben 21$ --- */
-  let guthaben = 21;
+  /* --- Guthaben 23$ --- */
+  let guthaben = 23;
   const guthabenAnzeige = document.getElementById("guthabenAnzeige");
 
   function aktualisiereGuthaben() {
@@ -568,7 +568,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const einwerfenBtn = document.getElementById("einwerfenBtn");
 
   einwerfenBtn.addEventListener("click", () => {
-    guthaben = 21;
+    guthaben = 23;
     guthabenAnzeige.textContent = `${guthaben} $`;
     guthabenAnzeige.classList.remove("blink");
     soundMuenze.currentTime = 0;
